@@ -1,0 +1,49 @@
+- name: ensure the jenkins apt repository key is installed
+  # apt_key: url=https://pkg.jenkins.io/debian-stable/jenkins.io.key state=present
+  apt_key: url="{{jenkins_repo}}/jenkins.io.key" state=present
+
+- name: ensure the repository is configured
+  #apt_repository: repo='deb https://pkg.jenkins.io/debian-stable binary/' state=present
+  apt_repository: repo="deb {{jenkins_url}} binary/" state=present
+
+- name: Install Java & CA-Certificates
+  package: name={{item}} state=present
+  loop:
+  - {{java}}
+  - ca-certificates
+
+- name: Update and upgrade apt packages
+  apt:
+    upgrade: yes
+    update_cache: yes
+
+- name: ensure jenkins is installed
+  apt: name=jenkins update_cache=yes
+
+- name: ensure jenkins is running
+  service: name=jenkins state=started
+
+- name: Check if port 8080 is listening
+  wait_for:
+    port: 8080
+    timeout: 180
+    msg: "Timeout waiting for 8080 to respond"
+  register: port_check
+  ignore_errors: yes
+
+- name: Print message if Jenkins is not running
+  debug:
+    msg: "*== Jenkins NOT Running ==*"
+  when: port_check.failed == true
+
+- name: Get init password Jenkins
+  shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+  changed_when: false
+  register: result
+
+- name: Print init password Jenkins
+  debug:
+     var: result.stdout
+
+
+

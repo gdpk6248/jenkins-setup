@@ -1,0 +1,3 @@
+---
+java: openjdk-11-jdk
+jenkins_repo: https://pkg.jenkins.io/debian-stable
